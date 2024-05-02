@@ -47,7 +47,7 @@ def readblastout(file, armlength, variants):
                         if (
                             2 * armlength * 0.5 < int(scores[1]) < 2 * armlength
                             and float(scores[0]) > 80
-                            and int(scores[4]) < armlength - 4
+                            and int(scores[4]) < armlength - 5
                             and int(scores[5]) > armlength + 5
                         ):
                             # more than 50% coverage, 80% homology, and non-target sequence covers ligation site +- 5
@@ -151,7 +151,7 @@ def getcandidates(listSiteChopped, headers, dirnames, armlength, accession):
                     else:
                         idxPairStart = np.add(idxPairStart, 1)
 
-                    idxPairEnd = np.zeros(len(idxPairStart), dtype=np.int)
+                    idxPairEnd = np.zeros(len(idxPairStart), dtype=np.int64)
                     for j in range(len(idxPairStart) - 1):
                         p = idxPairStart[j]
                         c = 0

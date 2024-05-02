@@ -60,7 +60,7 @@ def querygenes(genes, species):
 
     # load specified database
     loaddb(species)
-
+    # dd = numpy.unique(Acronyms)
     hits = []
     for gene in genes:
         if gene not in Acronyms:

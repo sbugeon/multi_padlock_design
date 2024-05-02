@@ -26,6 +26,17 @@ def checkspecies(species):
         success = True
     return success
 
+def loadnotebook(bookdir):
+    try:
+        with open(str(bookdir), "r") as f:
+            lines = [line.rstrip("\n").split(",") for line in f]
+            notebook = [line[0] for line in lines]
+            success = True
+    except IOError:
+        print("Notebook file not found. Try again.")
+        notebook = []
+        success = True
+    return  success, notebook
 
 def readgenefile(genefile):
     """Get the gene list"""
@@ -43,11 +54,15 @@ def readgenefile(genefile):
     return success, genes, linkers
 
 
-def readseqfile():
+def readseqfile(notebook):
     """Import sequences when gene list is not available"""
+
     success_f = False
     while not success_f:  # get input sequences if it is given instead of gene acronyms
-        seqfile = input("File containing target sequences in FASTA format: ")
+        if not notebook:
+            seqfile = input("File containing target sequences in FASTA format: ")
+        else:
+            seqfile = notebook[8]
         seqfile = correctinput(seqfile)
         success_f, headers, sequences = readfastafile.readfasta(seqfile)
         headers_wpos = []
@@ -120,6 +135,7 @@ def nprobes(n):
 
 def getdesigninput():
     """Check all keyboard inputs and format target sequences"""
+    success_not = False  # notebook
     success_s = False  # species
     success_g = False  # gene acronyms
     success_f = False  # fasta file
@@ -129,18 +145,30 @@ def getdesigninput():
     success_t = False  # Tm threshold
     success_n = False  # fixed number of output sequences
 
+    # load notebook
+    while not success_not:
+        bookdir = input("File with notebook: ").lower()
+        success_not, notebook = loadnotebook(bookdir)
+
     # loop until all the keyboard inputs are correct
     while not success_s:
-        species = input("Specify the species (human or mouse): ").lower()
+        if not notebook:
+            species = input("Specify the species (human or mouse): ").lower()
+        else:
+            species = notebook[0]
         success_s = checkspecies(species)
 
     # if species in (["human", "mouse"]):
     # when human or mouse, possible to load only gene list
     while not success_g:
-        genefile = input(
-            "File containing gene acronyms (text/csv file with one gene per row, or with linker sequences).\n"
-            "Just press Enter if input sequences can be provided:\n"
-        )
+        if not notebook:
+            genefile = input(
+                "File containing gene acronyms (text/csv file with one gene per row, or with linker sequences).\n"
+                "Just press Enter if input sequences can be provided:\n"
+            )
+        else:
+            genefile = notebook[1]
+
         if len(genefile):
             genefile = correctinput(genefile)
             success_g, allgenes, alllinkers = readgenefile(genefile)
@@ -161,7 +189,7 @@ def getdesigninput():
                 sequences,
                 headers_wpos,
                 basepos,
-            ) = readseqfile()
+            ) = readseqfile(notebook)
             toavoid = [":", "/", "\\", "[", "]", "?", '"', " ", "<", ">"]
             genes = []
             linkers = []
@@ -180,7 +208,11 @@ def getdesigninput():
     #     linkers = []
 
     while not success_d:
-        outdir = input("Output directory: ")
+        if not notebook:
+            outdir = input("Output directory: ")
+        else:
+            outdir = notebook[2]
+
         outdir = correctinput(outdir)
         if outdir.find(" ") > -1:
             print("No whitespace allowed in the directory path!")
@@ -193,29 +225,47 @@ def getdesigninput():
     os.makedirs(outdir_temp, exist_ok=True)
 
     while not success_a:
-        armlen = input("Length of one padlock arm (nt): ")
+        if not notebook:
+            armlen = input("Length of one padlock arm (nt): ")
+        else:
+            armlen = notebook[3]
         success_a = armlength(int(armlen))
 
     while not success_i:
-        interval = input("The minimum number of nucleotides between targets: ")
+        if not notebook:
+            interval = input("The minimum number of nucleotides between targets: ")
+        else:
+            interval = notebook[4]
         success_i = spacing(int(interval))
 
     while not success_t:
-        t1 = input(
-            "The lower threshold for target Tm\n"
-            "(0.1 uM oligo conc., 0.075 M monovalent salt, 0.01 M bivalent salt, 20% formamide): "
-        )
+        if not notebook:
+            t1 = input(
+                "The lower threshold for target Tm\n"
+                "(0.1 uM oligo conc., 0.075 M monovalent salt, 0.01 M bivalent salt, 20% formamide): "
+            )
+        else:
+            t1 = notebook[5]
+
         temp = tmthreshold(int(t1), 0)
         if temp:
             while not success_t:
-                t2 = input(
-                    "The upper threshold for target Tm\n"
-                    "(0.1 uM oligo conc., 0.075 M monovalent salt, 0.01 M bivalent salt, 20% formamide): "
-                )
+                if not notebook:
+                    t2 = input(
+                        "The upper threshold for target Tm\n"
+                        "(0.1 uM oligo conc., 0.075 M monovalent salt, 0.01 M bivalent salt, 20% formamide): "
+                    )
+                else:
+                    t2 = notebook[6]
                 success_t = tmthreshold(int(t2), int(t1))
 
     while not success_n:
-        n = input("Number of probes per gene (skip by pressing Enter): ")
+        if not notebook:
+            n = input("Number of probes per gene (skip by pressing Enter): ")
+        else:
+            n = notebook[7]
+            if n == '0':
+                n = []
         if len(n):
             success_n = nprobes(int(n))
         else:
